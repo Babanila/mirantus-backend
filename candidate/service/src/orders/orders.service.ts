@@ -1,7 +1,8 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { ListOrdersQueryDto } from './dto/list-orders-query.dto';
 import { OrderEntity } from './entities/order.entity';
 import { OrderStatus } from './domain/order-status.enum';
 import { hashPayload } from './domain/payload-hash';
@@ -57,7 +58,7 @@ export class OrdersService {
 
         // Fetch existing order using idempotency key
         const existing = await this.repo.findOneByOrFail({ idempotencyKey });
-        
+
         // CRITICAL: Detect payload mismatch (same key, different request)
         if (existing.payloadHash !== payloadHash) {
           throw new ConflictException(
@@ -68,10 +69,51 @@ export class OrdersService {
         // Replay detected: Return existing order
         return { order: existing, created: false };
       }
-      
+
       // Re-throw all other errors (connection issues, etc.)
       throw err;
     }
+  }
+
+  /**
+   * T-11: Paginated order listing with optional filters
+   * CRITICAL IMPLEMENTATION DETAILS:
+   * - 1-indexed pages: skip = (page - 1) * pageSize
+   * - Filters combined with AND logic
+   * - Empty results return { data: [], total: 0 } (never throws 404)
+   * - Default sort: createdAt DESC
+   *
+   * @param query - Filter and pagination parameters
+   * @returns Paginated result envelope with metadata
+   */
+  async findAll(query: ListOrdersQueryDto): Promise<{
+    data: OrderEntity[];
+    total: number;
+    page: number;
+    pageSize: number;
+  }> {
+    // Destructure with explicit defaults (DTO provides defaults but we reinforce here)
+    const { status, partnerId, page = 1, pageSize = 20 } = query;
+
+    // Build TypeORM where condition with AND logic
+    const where: FindOptionsWhere<OrderEntity> = {};
+    if (status !== undefined) where.status = status;
+    if (partnerId !== undefined) where.partnerId = partnerId;
+
+    // Execute query with pagination and sorting
+    const [data, total] = await this.repo.findAndCount({
+      where,
+      order: { createdAt: 'DESC' }, // SPEC.md §5: Most recent first
+      skip: (page - 1) * pageSize, // CRITICAL: 1-indexed page conversion
+      take: pageSize,
+    });
+
+    return {
+      data,
+      total,
+      page,
+      pageSize,
+    };
   }
 
   /**
