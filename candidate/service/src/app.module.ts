@@ -16,10 +16,7 @@ import { DatabaseModule } from './database/database.module';
  *   T-19  → WinstonModule         (logger/)
  */
 @Module({
-  imports: [
-    ConfigModule,
-    DatabaseModule,
-  ],
+  imports: [ConfigModule, DatabaseModule],
   controllers: [],
   providers: [],
 })

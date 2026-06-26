@@ -21,7 +21,11 @@ describe('hashPayload', () => {
 
     it('treats missing keys and undefined keys identically', () => {
       const hash1 = hashPayload({ partnerId: 'p1', patientReference: 'ref1' });
-      const hash2 = hashPayload({ partnerId: 'p1', patientReference: 'ref1', requestedLocation: undefined });
+      const hash2 = hashPayload({
+        partnerId: 'p1',
+        patientReference: 'ref1',
+        requestedLocation: undefined,
+      });
       expect(hash1).toBe(hash2);
     });
   });
@@ -48,13 +52,13 @@ describe('hashPayload', () => {
 
   describe('Output format', () => {
     it('always returns 64-character lowercase hex string', () => {
-      const hash = hashPayload({ 
-        partnerId: 'test', 
-        patientReference: 'ref', 
-        requestedLocation: 'loc', 
-        priority: 'routine' 
+      const hash = hashPayload({
+        partnerId: 'test',
+        patientReference: 'ref',
+        requestedLocation: 'loc',
+        priority: 'routine',
       });
-      
+
       expect(hash).toHaveLength(64);
       expect(hash).toMatch(/^[a-f0-9]{64}$/); // Only hex characters
     });
@@ -68,23 +72,23 @@ describe('hashPayload', () => {
 
   describe('Pure function guarantees', () => {
     it('same input always produces identical output (determinism)', () => {
-      const input = { 
-        partnerId: 'p1', 
-        patientReference: 'ref1', 
-        requestedLocation: 'loc1', 
-        priority: 'urgent' 
+      const input = {
+        partnerId: 'p1',
+        patientReference: 'ref1',
+        requestedLocation: 'loc1',
+        priority: 'urgent',
       };
-      
+
       const hashes = Array.from({ length: 10 }, () => hashPayload(input));
-      hashes.forEach(hash => expect(hash).toBe(hashes[0]));
+      hashes.forEach((hash) => expect(hash).toBe(hashes[0]));
     });
 
     it('no side effects (does not mutate input)', () => {
       const input = { a: '1', b: undefined, c: '2' };
       const originalKeys = Object.keys(input).sort();
-      
+
       hashPayload(input);
-      
+
       expect(Object.keys(input).sort()).toEqual(originalKeys);
       expect(input.b).toBeUndefined(); // Still undefined
     });
@@ -100,17 +104,17 @@ describe('hashPayload', () => {
         requestedLocation: 'Lab 3B',
         priority: 'urgent',
       };
-      
+
       const payloadB = {
         requestedLocation: 'Lab 3B',
         priority: 'urgent',
         patientReference: 'PAT-789',
         partnerId: 'mirantus-hospital',
       };
-      
+
       expect(hashPayload(payloadA)).toBe(hashPayload(payloadB));
     });
-    
+
     it('detects payload mismatch with same idempotency key', () => {
       const original = {
         partnerId: 'p1',
@@ -118,12 +122,12 @@ describe('hashPayload', () => {
         requestedLocation: 'loc1',
         priority: 'routine',
       };
-      
+
       const modified = {
         ...original,
         priority: 'urgent', // Changed value
       };
-      
+
       expect(hashPayload(original)).not.toBe(hashPayload(modified));
     });
   });

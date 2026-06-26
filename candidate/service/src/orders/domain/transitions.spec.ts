@@ -53,10 +53,12 @@ describe('State Machine Validator', () => {
 
   describe('Edge cases', () => {
     it('returns false for invalid status values', () => {
-      // @ts-expect-error - testing runtime behavior
-      expect(isValidTransition('invalid_status' as OrderStatus, OrderStatus.ACCEPTED)).toBe(false);
-      // @ts-expect-error - testing runtime behavior
-      expect(isValidTransition(OrderStatus.RECEIVED, 'invalid_status' as OrderStatus)).toBe(false);
+      expect(
+        isValidTransition('invalid_status' as unknown as OrderStatus, OrderStatus.ACCEPTED),
+      ).toBe(false);
+      expect(
+        isValidTransition(OrderStatus.RECEIVED, 'invalid_status' as unknown as OrderStatus),
+      ).toBe(false);
     });
 
     it('is pure function (deterministic output)', () => {
@@ -71,10 +73,10 @@ describe('State Machine Validator', () => {
       expect([...VALID_TRANSITIONS[OrderStatus.RECEIVED]]).toContain(OrderStatus.ACCEPTED);
       expect([...VALID_TRANSITIONS[OrderStatus.RECEIVED]]).toContain(OrderStatus.REJECTED);
       expect([...VALID_TRANSITIONS[OrderStatus.RECEIVED]].length).toBe(2);
-      
+
       // Verify IN_PROGRESS has ONLY completed (critical for rejection test)
       expect([...VALID_TRANSITIONS[OrderStatus.IN_PROGRESS]]).toEqual([OrderStatus.COMPLETED]);
-      
+
       // Verify terminal states have no transitions
       expect([...VALID_TRANSITIONS[OrderStatus.COMPLETED]]).toHaveLength(0);
       expect([...VALID_TRANSITIONS[OrderStatus.REJECTED]]).toHaveLength(0);

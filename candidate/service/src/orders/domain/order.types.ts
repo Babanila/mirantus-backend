@@ -12,7 +12,7 @@ export interface OrderResource {
   patientReference: string;
   requestedLocation: string;
   priority: OrderPriority; // Serialized as string in JSON response
-  status: OrderStatus;     // Serialized as string in JSON response
-  createdAt: string;       // ISO8601 UTC string (e.g., "2026-06-27T10:00:00.000Z")
-  updatedAt: string;       // ISO8601 UTC string
+  status: OrderStatus; // Serialized as string in JSON response
+  createdAt: string; // ISO8601 UTC string (e.g., "2026-06-27T10:00:00.000Z")
+  updatedAt: string; // ISO8601 UTC string
 }

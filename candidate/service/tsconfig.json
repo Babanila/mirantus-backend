@@ -20,6 +20,7 @@
     /* Decorator Support — required for TypeORM + NestJS */
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
+    "useDefineForClassFields": false,
 
     /* Module Resolution */
     "baseUrl": "./",

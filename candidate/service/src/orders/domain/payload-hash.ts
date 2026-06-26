@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
  * 1. Exclude all undefined values (optional fields)
  * 2. Sort keys alphabetically (order-independent hashing)
  * 3. No whitespace in JSON string (compact representation)
- * 
+ *
  * @param dto - Flat DTO object (matches CreateOrderDto structure)
  * @returns 64-character lowercase hex string (SHA-256)
  *
@@ -20,10 +20,10 @@ export function hashPayload(dto: Record<string, unknown>): string {
     Object.fromEntries(
       Object.entries(dto)
         .filter(([, value]) => value !== undefined) // Exclude undefined values
-        .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) // Deterministic key order
-    )
+        .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)), // Deterministic key order
+    ),
   );
-  
+
   // Generate SHA-256 hash as hex string
   return createHash('sha256').update(normalized).digest('hex');
 }

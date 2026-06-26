@@ -8,7 +8,7 @@ import { AppConfigService } from '../config/config.service';
  *
  * Initialises TypeORM with a PostgreSQL DataSource using configuration
  * values from ConfigService (validated at startup by Joi schema in T-02).
- * 
+ *
  * CRITICAL: synchronize MUST be false (never auto-generate schema)
  * Entities loaded via glob pattern to support migrations in dist/
  *

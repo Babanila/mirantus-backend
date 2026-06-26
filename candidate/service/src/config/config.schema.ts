@@ -25,16 +25,12 @@ export const configSchema = Joi.object({
     .required(),
 
   // ── Runtime ────────────────────────────────────────────────────────────────
-  NODE_ENV: Joi.string()
-    .valid('development', 'test', 'production')
-    .default('development'),
+  NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
 
   // Port must be in the unprivileged range — no need to run as root.
   API_PORT: Joi.number().integer().min(1024).max(65535).default(3000),
 
-  LOG_LEVEL: Joi.string()
-    .valid('error', 'warn', 'info', 'debug')
-    .default('info'),
+  LOG_LEVEL: Joi.string().valid('error', 'warn', 'info', 'debug').default('info'),
 
   // ── CORS ───────────────────────────────────────────────────────────────────
   // Comma-separated list of allowed origins.
