@@ -5,3 +5,4 @@
 export { OrderStatus } from './order-status.enum';
 export { OrderPriority } from './order-priority.enum';
 export { OrderResource } from './order.types';
+export { isValidTransition, VALID_TRANSITIONS } from './transitions';

@@ -37,6 +37,8 @@ export default defineConfig({
       reporter: ['text', 'json', 'html', 'lcov'],
       include: ['src/**/*.ts'],
       exclude: [
+        'node_modules/',
+        'dist/',
         'src/**/*.spec.ts',
         'src/**/*.module.ts',
         'src/main.ts',
