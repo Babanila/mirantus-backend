@@ -1,31 +1,70 @@
+import 'reflect-metadata';
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { AppModule } from './app.module';
+import { AppConfigService } from './config/config.service';
+import { requestIdMiddleware } from './middleware/request-id.middleware';
+// import { Logger } from 'winston'; // Placeholder for T-19 (no-op until Winston configured)
+
 /**
  * main.ts — Application entry point
  *
- * SCAFFOLD (T-01): Minimal bootstrap that compiles and starts the server.
- *
- * COMPLETE WIRING (T-14) will add:
- *   • Global ValidationPipe  (whitelist + forbidNonWhitelisted + transform)
- *   • CORS                   (origin from CORS_ORIGIN env variable)
- *   • Request ID middleware  (X-Request-ID header on every response)
- *   • ConfigService port     (API_PORT env variable)
- *
- * Do not add those here — implement them in T-14 to keep changes atomic.
+ * T-14: Production bootstrap with strict security and observability foundations
+ * CRITICAL CONFIGURATIONS (NON-NEGOTIABLE):
+ * 1. forbidNonWhitelisted: true → Rejects unknown DTO fields (security boundary)
+ * 2. CORS origins parsed from env (comma-separated)
+ * 3. Request ID middleware applied BEFORE routes
+ * 4. Port from ConfigService (validated via T-02 schema)
  */
 
-import 'reflect-metadata';
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { AppConfigService } from './config/config.service';
+async function bootstrap() {
+  // Enable log buffering during startup (prevents log loss during init)
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+  });
 
-async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const appConfig = app.get(AppConfigService);
 
-  // Get config service to verify it's initialized
-  const configService = app.get(AppConfigService);
-  const port = configService.apiPort;
+  // CRITICAL: Global ValidationPipe - SECURITY BOUNDARY
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Strip non-decorated properties
+      forbidNonWhitelisted: true, // ←←← MOST CRITICAL SETTING (rejects unknown fields)
+      transform: true, // Auto-transform payloads to DTO instances
+      transformOptions: {
+        enableImplicitConversion: false, // Prevent unsafe type coercion
+      },
+      // Error response shape handled by GlobalExceptionFilter (T-15)
+    }),
+  );
 
+  // CORS Configuration - From validated env variable
+  const corsOrigins = appConfig.corsOrigins;
+
+  app.enableCors({
+    origin: corsOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key', 'X-Request-ID'],
+  });
+
+  // Global Middleware - Applied BEFORE routes
+  app.use(requestIdMiddleware); // Sets X-Request-ID on all responses
+
+  // Start Server - Port from validated config
+  const port = appConfig.apiPort;
   await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+
+  // Optional: Log startup info (safe - no PII)
+  if (process.env.NODE_ENV !== 'test') {
+    console.log(`🚀 Screening Order Service listening on port ${port}`);
+    console.log(`🌍 Environment: ${appConfig.nodeEnv}`);
+    console.log(`🔒 CORS allowed origins: ${corsOrigins.join(', ')}`);
+  }
 }
 
-void bootstrap();
+void bootstrap().catch((error) => {
+  console.error('❌ Application bootstrap failed:', error);
+  process.exit(1);
+});
