@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
+import { OrdersModule } from './orders/orders.module';
 
 /**
  * AppModule — root NestJS module.
@@ -16,7 +17,7 @@ import { DatabaseModule } from './database/database.module';
  *   T-19  → WinstonModule         (logger/)
  */
 @Module({
-  imports: [ConfigModule, DatabaseModule],
+  imports: [ConfigModule, DatabaseModule, OrdersModule],
   controllers: [],
   providers: [],
 })

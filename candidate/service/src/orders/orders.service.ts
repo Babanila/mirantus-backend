@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -114,6 +114,25 @@ export class OrdersService {
       page,
       pageSize,
     };
+  }
+
+  /**
+   * T-12: Retrieve single order by ID
+   * CRITICAL REQUIREMENTS:
+   * - Throws NotFoundException with EXACT message "Order not found"
+   * - Never returns null/undefined (Promise<OrderEntity> guarantee)
+   * - No logging (PII safety - patientReference would leak)
+   *
+   * @param id - UUID string of order to retrieve
+   * @returns OrderEntity if found
+   * @throws NotFoundException if order does not exist (maps to 404 in controller)
+   */
+  async findOne(id: string): Promise<OrderEntity> {
+    const order = await this.repo.findOneBy({ id });
+    if (!order) {
+      throw new NotFoundException('Order not found'); // EXACT message per TASKS.md
+    }
+    return order;
   }
 
   /**
