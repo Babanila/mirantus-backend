@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from './config/config.module';
+import { DatabaseModule } from './database/database.module';
 
 /**
  * AppModule — root NestJS module.
@@ -7,7 +8,6 @@ import { ConfigModule } from './config/config.module';
  * This is the scaffold placeholder.  Modules are registered here as each
  * phase of TASKS.md is completed:
  *
- *   T-06  → DatabaseModule        (database/)
  *   T-10  → OrdersModule          (orders/)
  *   T-14  → Global pipes + CORS   (main.ts)
  *   T-15  → APP_FILTER            (filters/)
@@ -16,7 +16,10 @@ import { ConfigModule } from './config/config.module';
  *   T-19  → WinstonModule         (logger/)
  */
 @Module({
-  imports: [ConfigModule],
+  imports: [
+    ConfigModule,
+    DatabaseModule,
+  ],
   controllers: [],
   providers: [],
 })
