@@ -15,12 +15,17 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { AppConfigService } from './config/config.service';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
-  const port = parseInt(process.env['API_PORT'] ?? '3000', 10);
+  // Get config service to verify it's initialized
+  const configService = app.get(AppConfigService);
+  const port = configService.apiPort;
+
   await app.listen(port);
+  console.log(`Application is running on: http://localhost:${port}`);
 }
 
 void bootstrap();
