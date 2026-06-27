@@ -2,9 +2,12 @@ import { isValidTransition, VALID_TRANSITIONS } from './transitions';
 import { OrderStatus } from './order-status.enum';
 
 /**
- * T-04: EXHAUSTIVE transition tests covering ALL 20 permutations
- * Matches SPEC.md §6 transition table exactly
- * CRITICAL: Explicit verification of in_progress → rejected rejection
+ * T-20: EXHAUSTIVE state machine tests covering ALL 20 SPEC.md §6 transitions
+ * CRITICAL VERIFICATIONS:
+ * - Exactly 5 allowed transitions pass
+ * - Exactly 15 disallowed transitions fail (including in_progress → rejected)
+ * - Explicit standalone test for critical edge case (TASKS.md Agent Note)
+ * - Zero dependencies on external systems (pure unit tests)
  */
 describe('State Machine Validator', () => {
   describe('isValidTransition - ALLOWED transitions (5 cases)', () => {
@@ -21,22 +24,22 @@ describe('State Machine Validator', () => {
 
   describe('isValidTransition - DISALLOWED transitions (15 cases)', () => {
     it.each<[OrderStatus, OrderStatus]>([
-      // From RECEIVED
+      // From RECEIVED (2 invalid)
       [OrderStatus.RECEIVED, OrderStatus.IN_PROGRESS],
       [OrderStatus.RECEIVED, OrderStatus.COMPLETED],
-      // From ACCEPTED
+      // From ACCEPTED (2 invalid)
       [OrderStatus.ACCEPTED, OrderStatus.RECEIVED],
       [OrderStatus.ACCEPTED, OrderStatus.COMPLETED],
-      // CRITICAL: From IN_PROGRESS (common agent mistake per TASKS.md Agent Note)
-      [OrderStatus.IN_PROGRESS, OrderStatus.REJECTED],
+      // CRITICAL: From IN_PROGRESS (3 invalid - including rejected)
+      [OrderStatus.IN_PROGRESS, OrderStatus.REJECTED], // ← TASKS.md Agent Note focus
       [OrderStatus.IN_PROGRESS, OrderStatus.RECEIVED],
       [OrderStatus.IN_PROGRESS, OrderStatus.ACCEPTED],
-      // From COMPLETED
+      // From COMPLETED (4 invalid)
       [OrderStatus.COMPLETED, OrderStatus.RECEIVED],
       [OrderStatus.COMPLETED, OrderStatus.ACCEPTED],
       [OrderStatus.COMPLETED, OrderStatus.IN_PROGRESS],
       [OrderStatus.COMPLETED, OrderStatus.REJECTED],
-      // From REJECTED
+      // From REJECTED (4 invalid)
       [OrderStatus.REJECTED, OrderStatus.RECEIVED],
       [OrderStatus.REJECTED, OrderStatus.ACCEPTED],
       [OrderStatus.REJECTED, OrderStatus.IN_PROGRESS],
@@ -69,9 +72,10 @@ describe('State Machine Validator', () => {
     });
 
     it('transition map structure matches specification', () => {
-      // Verify RECEIVED transitions (critical path)
-      expect([...VALID_TRANSITIONS[OrderStatus.RECEIVED]]).toContain(OrderStatus.ACCEPTED);
-      expect([...VALID_TRANSITIONS[OrderStatus.RECEIVED]]).toContain(OrderStatus.REJECTED);
+      // Verify RECEIVED has exactly 2 allowed transitions
+      expect([...VALID_TRANSITIONS[OrderStatus.RECEIVED]]).toEqual(
+        expect.arrayContaining([OrderStatus.ACCEPTED, OrderStatus.REJECTED]),
+      );
       expect([...VALID_TRANSITIONS[OrderStatus.RECEIVED]].length).toBe(2);
 
       // Verify IN_PROGRESS has ONLY completed (critical for rejection test)
