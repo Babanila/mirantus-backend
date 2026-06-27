@@ -1,8 +1,9 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from './config/config.module';
-import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import { DatabaseModule } from './database/database.module';
+import { GlobalExceptionFilter } from './filters/global-exception.filter';
+import { HealthModule } from './health/health.module';
 import { OrdersModule } from './orders/orders.module';
 
 /**
@@ -28,6 +29,7 @@ import { OrdersModule } from './orders/orders.module';
     ConfigModule, // MUST be first for startup validation
     DatabaseModule, // Requires ConfigModule for DATABASE_URL
     OrdersModule, // Service layer (no controller yet)
+    HealthModule, // Health endpoints
   ],
   controllers: [],
   providers: [
@@ -40,7 +42,7 @@ import { OrdersModule } from './orders/orders.module';
     // Critical for: field exclusion + ISO8601 UTC serialization
     {
       provide: APP_INTERCEPTOR,
-      useClass: ClassSerializerInterceptor, // T-17: Class serializer interceptor
+      useClass: ClassSerializerInterceptor,
     },
   ],
 })
