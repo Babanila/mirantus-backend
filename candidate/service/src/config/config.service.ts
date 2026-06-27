@@ -72,7 +72,10 @@ export class AppConfigService {
    */
   get corsOrigins(): string[] {
     const raw = this.config.get<string>('CORS_ORIGIN', 'http://localhost:5173');
-    return raw.split(',').map((o) => o.trim()).filter(Boolean);
+    return raw
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
   }
 
   // ── Database connection pool ───────────────────────────────────────────────

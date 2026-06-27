@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { ConfigModule } from './config/config.module';
+import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import { DatabaseModule } from './database/database.module';
 import { OrdersModule } from './orders/orders.module';
 
@@ -17,8 +19,6 @@ import { OrdersModule } from './orders/orders.module';
  * This is the scaffold placeholder.  Modules are registered here as each
  * phase of TASKS.md is completed:
  *
- *   T-14  → Global pipes + CORS   (main.ts)
- *   T-15  → APP_FILTER            (filters/)
  *   T-17  → APP_INTERCEPTOR       (ClassSerializerInterceptor)
  *   T-18  → HealthModule          (health/)
  *   T-19  → WinstonModule         (logger/)
@@ -30,6 +30,11 @@ import { OrdersModule } from './orders/orders.module';
     OrdersModule, // Service layer (no controller yet)
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter, // T-15: Global exception filter
+    },
+  ],
 })
 export class AppModule {}
