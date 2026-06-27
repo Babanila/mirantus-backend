@@ -131,4 +131,43 @@ describe('hashPayload', () => {
       expect(hashPayload(original)).not.toBe(hashPayload(modified));
     });
   });
+
+  describe('T-21 Critical Verification', () => {
+    it('EXACT requirement: { b: "2", a: "1" } === { a: "1", b: "2" }', () => {
+      const hash1 = hashPayload({ b: '2', a: '1' });
+      const hash2 = hashPayload({ a: '1', b: '2' });
+      expect(hash1).toBe(hash2);
+      expect(hash1).toMatch(/^[a-f0-9]{64}$/); // 64-char hex
+    });
+
+    it('EXACT requirement: { a: "1" } !== { a: "2" }', () => {
+      const hash1 = hashPayload({ a: '1' });
+      const hash2 = hashPayload({ a: '2' });
+      expect(hash1).not.toBe(hash2);
+    });
+
+    it('Output is ALWAYS 64-character lowercase hex string', () => {
+      const hash = hashPayload({
+        partnerId: 'test',
+        patientReference: 'ref',
+        requestedLocation: 'loc',
+        priority: 'routine',
+      });
+      expect(hash).toHaveLength(64);
+      expect(hash).toMatch(/^[a-f0-9]{64}$/);
+      expect(hash).toBe(hash.toLowerCase());
+    });
+
+    it('Pure function: Zero side effects on input object', () => {
+      const input = { a: '1', b: undefined, c: '2' };
+      const originalKeys = Object.keys(input).sort();
+      const originalValues = { ...input };
+
+      hashPayload(input);
+
+      expect(Object.keys(input).sort()).toEqual(originalKeys);
+      expect(input).toEqual(originalValues);
+      expect(input.b).toBeUndefined();
+    });
+  });
 });

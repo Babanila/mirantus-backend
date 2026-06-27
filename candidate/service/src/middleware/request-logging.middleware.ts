@@ -33,7 +33,7 @@ export class RequestLoggingMiddleware implements NestMiddleware {
     // Track response completion
     res.on('finish', () => {
       const durationMs = Date.now() - startTime;
-      
+
       // ALWAYS log metadata at info level (safe fields only)
       requestLogger.info('request_completed', {
         method: req.method,
