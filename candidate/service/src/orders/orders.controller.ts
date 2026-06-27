@@ -53,9 +53,7 @@ export class OrdersController {
    * Query params validated/transformed by global ValidationPipe (T-14)
    */
   @Get()
-  async findAll(
-    @Query() query: ListOrdersQueryDto,
-  ): Promise<{
+  async findAll(@Query() query: ListOrdersQueryDto): Promise<{
     data: OrderResponseDto[];
     total: number;
     page: number;
@@ -76,9 +74,7 @@ export class OrdersController {
    * Rejects malformed UUIDs with 400 (not 404) per SPEC.md §8.2
    */
   @Get(':id')
-  async findOne(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<OrderResponseDto> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<OrderResponseDto> {
     const order = await this.ordersService.findOne(id);
     return new OrderResponseDto(order);
   }

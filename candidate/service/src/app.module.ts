@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from './config/config.module';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import { DatabaseModule } from './database/database.module';
@@ -34,6 +34,13 @@ import { OrdersModule } from './orders/orders.module';
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter, // T-15: Global exception filter
+    },
+    // T-17: GLOBAL RESPONSE SERIALIZATION
+    // Enforces @Exclude/@Expose decorators on ALL responses
+    // Critical for: field exclusion + ISO8601 UTC serialization
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ClassSerializerInterceptor, // T-17: Class serializer interceptor
     },
   ],
 })
