@@ -1,7 +1,7 @@
 import { Injectable, Scope, Inject } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { Request } from 'express';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger } from 'winston';
 
 /**
@@ -16,10 +16,18 @@ export class AppLoggerService {
   private readonly requestId: string;
 
   constructor(
-    @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
     @Inject(REQUEST) private readonly request: Request,
   ) {
     this.requestId = (request.headers['x-request-id'] as string) || 'unknown';
+
+    // FAIL FAST: Validate logger shape at injection time
+    if (typeof this.logger?.log !== 'function' || typeof this.logger?.info !== 'function') {
+      throw new Error(
+        '[AppLoggerService] CRITICAL: Injected logger lacks Winston methods. ' +
+          'Verify WINSTON_MODULE_PROVIDER is used (not WINSTON_MODULE_NEST_PROVIDER).',
+      );
+    }
   }
 
   /**
@@ -29,23 +37,32 @@ export class AppLoggerService {
    * @param data - Structured data (patientReference filtered at non-debug levels)
    */
   private logWithFilter(level: string, message: string, data: Record<string, unknown> = {}) {
-    // FILTER BASED ON LOG CALL LEVEL (parameter), NOT logger instance state
+    // Winston's native .log() accepts level string directly
     const safeData = { ...data };
+
+    if (typeof this.logger.info !== 'function') {
+      throw new Error(
+        'CRITICAL: Injected logger is not Winston raw logger. ' +
+          'Did you use WINSTON_MODULE_PROVIDER? Check middleware/logger injection tokens.',
+      );
+    }
+
     if (level !== 'debug' && 'patientReference' in safeData) {
       delete safeData.patientReference;
       safeData._filteredFields = ['patientReference'];
     }
 
     this.logger.log(level, message, {
+      // ← VALID FOR RAW WINSTON LOGGER
       requestId: this.requestId,
       timestamp: new Date().toISOString(),
       ...safeData,
     });
   }
 
-  // Public interface matching Winston methods
+  // Public methods map to Winston's native API
   log(message: string, data?: Record<string, unknown>) {
-    this.logWithFilter('info', message, data);
+    this.logWithFilter('info', message, data); // Winston uses 'info' level
   }
   error(message: string, data?: Record<string, unknown>) {
     this.logWithFilter('error', message, data);
