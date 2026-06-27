@@ -1,28 +1,21 @@
-import { ClassSerializerInterceptor, Module } from '@nestjs/common';
+import {
+  ClassSerializerInterceptor,
+  Module,
+  MiddlewareConsumer,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import { HealthModule } from './health/health.module';
+import { LoggerModule } from './logger/logger.module';
+import { RequestLoggingMiddleware } from './middleware/request-logging.middleware';
 import { OrdersModule } from './orders/orders.module';
 
 /**
  * AppModule — root NestJS module.
- *
- * T-14: Minimal AppModule required for bootstrap
- * CRITICAL: Only includes modules required for app startup
- * - ConfigModule: Required for validation at bootstrap (T-02)
- * - DatabaseModule: Required for DataSource initialization (T-06)
- * - OrdersModule: Required for service layer (T-10-T-13)
- *
- * NOTE: HealthModule (T-18) and controllers (T-16) added later
- *
- * This is the scaffold placeholder.  Modules are registered here as each
- * phase of TASKS.md is completed:
- *
- *   T-17  → APP_INTERCEPTOR       (ClassSerializerInterceptor)
- *   T-18  → HealthModule          (health/)
- *   T-19  → WinstonModule         (logger/)
  */
 @Module({
   imports: [
@@ -30,6 +23,7 @@ import { OrdersModule } from './orders/orders.module';
     DatabaseModule, // Requires ConfigModule for DATABASE_URL
     OrdersModule, // Service layer (no controller yet)
     HealthModule, // Health endpoints
+    LoggerModule, // Logging functionality
   ],
   controllers: [],
   providers: [
@@ -46,4 +40,11 @@ import { OrdersModule } from './orders/orders.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // CRITICAL ORDERING (after body parser, before routes):
+    // 1. requestIdMiddleware (T-14) - sets X-Request-ID header
+    // 2. RequestLoggingMiddleware (T-19) - uses requestId, measures duration
+    consumer.apply(RequestLoggingMiddleware).forRoutes({ path: '*', method: RequestMethod.ALL }); // Apply to ALL routes
+  }
+}
