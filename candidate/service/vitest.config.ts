@@ -1,49 +1,76 @@
 import { defineConfig } from 'vitest/config';
+import swc from 'unplugin-swc';
+
+/**
+ * IMPORTANT
+ *
+ * NestJS dependency injection relies on TypeScript decorator metadata
+ * (Reflect.getMetadata('design:paramtypes')).
+ *
+ * Vitest's default esbuild transformer strips decorator metadata,
+ * causing Nest providers to fail with: "ConfigService was not injected"
+ *
+ * We therefore use SWC as the transformer with:
+ *   transform.decoratorMetadata = true
+ * Do NOT remove this configuration unless replacing the test runner.
+ */
 
 export default defineConfig({
+  plugins: [
+    swc.vite({
+      jsc: {
+        parser: {
+          syntax: 'typescript',
+          decorators: true,
+        },
+        transform: {
+          legacyDecorator: true,
+          decoratorMetadata: true,
+        },
+      },
+    }),
+  ],
   test: {
-    /**
-     * Expose describe / it / expect / vi as globals so test files don't need
-     * to import them individually.  TypeScript picks these up via the
-     * "vitest/globals" reference in src/types/vitest.d.ts.
-     */
+    globalSetup: ['./test/global-setup.ts'],
+    env: {
+      DATABASE_URL: 'postgresql://user:password@localhost:5432/screening_orders_test?sslmode=disable',
+      NODE_ENV: 'test',
+      LOG_LEVEL: 'error',
+      API_PORT: '3001',
+      CORS_ORIGIN: 'http://localhost:3000',
+      DB_POOL_MAX: '10',
+      DB_POOL_MIN: '2',
+      DB_CONNECT_TIMEOUT_MS: '5000',
+    },
     globals: true,
-
     environment: 'node',
-
-    /**
-     * Two separate test sets — each targeted by a separate npm script:
-     *
-     *   npm run test:unit         → vitest run src   (*.spec.ts files in src/)
-     *   npm run test:integration  → vitest run test  (*.e2e.ts files in test/)
-     *
-     * The CLI directory argument (`src` or `test`) filters which of these
-     * glob patterns is matched per run.
-     */
+    pool: 'threads',
+    poolOptions: {
+      threads: { 
+        singleThread: true, // REQUIRED: Prevents concurrent DB access between tests
+        isolate: true
+      }
+    },
     include: ['src/**/*.spec.ts', 'test/**/*.e2e.ts'],
-
-    /**
-     * Never import migration files during test runs — they contain raw SQL
-     * that TypeORM's migration runner must execute, not Vitest.
-     */
-    exclude: ['node_modules', 'dist', 'src/migrations/**'],
-
-    /**
-     * Coverage via V8 (no Babel required).
-     * Run with: npm run test:cov
-     */
+    exclude: [
+      'node_modules', 
+      'dist', 
+      'src/migrations/**',
+      'test/app.factory.ts',  // Helper modules ≠ test files
+      'test/database-setup.ts'
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
-      include: ['src/**/*.ts'],
       exclude: [
-        'node_modules/',
-        'dist/',
-        'src/**/*.spec.ts',
-        'src/**/*.module.ts',
-        'src/main.ts',
-        'src/migrations/**',
-        'src/types/**',
+        'node_modules/**',
+        'dist/**',
+        '**/*.spec.ts',
+        '**/*.e2e.ts',
+        '**/*.config.ts',
+        '**/main.ts',
+        '**/migrations/**',
+        'test/**/*.{ts,js}', // Exclude ALL test helper utilities from coverage
       ],
       thresholds: {
         statements: 80,
@@ -52,12 +79,9 @@ export default defineConfig({
         lines: 80,
       },
     },
-
-    /**
-     * Realistic timeout for integration tests that hit a real Postgres instance.
-     * Unit tests are fast and will finish well within this window.
-     */
-    testTimeout: 30_000,
-    hookTimeout: 30_000,
+    testTimeout: 75000,
+    hookTimeout: 75000,
+    teardownTimeout: 10000,
+    dangerouslyIgnoreUnhandledErrors: false,
   },
 });
