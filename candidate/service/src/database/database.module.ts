@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '../config/config.module';
+import { AppConfigModule } from '../config/config.module';
 import { AppConfigService } from '../config/config.service';
+import { OrderEntity } from '../orders/entities/order.entity';
 
 /**
  * T-06: Database module with STRICT production-safe configuration
@@ -16,21 +17,23 @@ import { AppConfigService } from '../config/config.service';
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule], // Required to inject AppConfigService
+      imports: [AppConfigModule], // Required to inject AppConfigService
       inject: [AppConfigService],
-      useFactory: (appConfig: AppConfigService) => ({
-        type: 'postgres',
-        url: appConfig.databaseUrl, // Typed as string (non-nullable per T-02)
-        entities: [__dirname + '/../**/*.entity{.ts,.js}'], // Glob pattern for src/dist compatibility
-        synchronize: false, // 🚨 NEVER true - migrations ONLY for schema changes
-        migrationsRun: false, // Migrations run explicitly via CLI (T-08 scripts)
-        logging: appConfig.nodeEnv === 'development',
-        extra: {
-          max: appConfig.dbPoolMax,
-          min: appConfig.dbPoolMin,
-          connectionTimeoutMillis: appConfig.dbConnectTimeoutMs,
-        },
-      }),
+      useFactory: (appConfig: AppConfigService) => {
+        return {
+          type: 'postgres',
+          url: appConfig.databaseUrl, // Typed as string (non-nullable per T-02)
+          entities: [OrderEntity],
+          synchronize: false,
+          migrationsRun: false, // Migrations run explicitly via CLI (T-08 scripts)
+          logging: ['development', 'test'].includes(appConfig.nodeEnv),
+          extra: {
+            max: appConfig.dbPoolMax,
+            min: appConfig.dbPoolMin,
+            connectionTimeoutMillis: appConfig.dbConnectTimeoutMs,
+          },
+        };
+      },
     }),
   ],
 })

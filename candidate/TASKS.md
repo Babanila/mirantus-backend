@@ -461,7 +461,7 @@ src/
 **Key configuration requirements:**
 ```typescript
 TypeOrmModule.forRootAsync({
-  imports:    [ConfigModule],
+  imports:    [AppConfigModule],
   inject:     [ConfigService],
   useFactory: (config: ConfigService) => ({
     type:              'postgres',

@@ -219,7 +219,7 @@ candidate/service/
 |--------|----------------|
 | `OrdersModule` | Create, read, list, status-transition all orders; idempotency logic |
 | `HealthModule` | Liveness (`/health`) and readiness (`/ready`) probes |
-| `ConfigModule` | Load and validate all environment variables at startup |
+| `AppConfigModule` | Load and validate all environment variables at startup |
 | `DatabaseModule` | TypeORM DataSource setup, connection management |
 
 ---

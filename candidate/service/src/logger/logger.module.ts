@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
-import { ConfigModule } from '../config/config.module';
+import { AppConfigModule } from '../config/config.module';
 import { AppConfigService } from '../config/config.service';
 
 /**
@@ -15,7 +15,7 @@ import { AppConfigService } from '../config/config.service';
 @Module({
   imports: [
     WinstonModule.forRootAsync({
-      imports: [ConfigModule],
+      imports: [AppConfigModule],
       inject: [AppConfigService],
       useFactory: (appConfig: AppConfigService) => {
         const isTest = appConfig.isTest;

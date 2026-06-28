@@ -6,7 +6,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
-import { ConfigModule } from './config/config.module';
+import { AppConfigModule } from './config/config.module';
 import { DatabaseModule } from './database/database.module';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import { HealthModule } from './health/health.module';
@@ -19,8 +19,8 @@ import { OrdersModule } from './orders/orders.module';
  */
 @Module({
   imports: [
-    ConfigModule, // MUST be first for startup validation
-    DatabaseModule, // Requires ConfigModule for DATABASE_URL
+    AppConfigModule, // MUST be first for startup validation
+    DatabaseModule, // Requires AppConfigModule for DATABASE_URL
     OrdersModule, // Service layer (no controller yet)
     HealthModule, // Health endpoints
     LoggerModule, // Logging functionality

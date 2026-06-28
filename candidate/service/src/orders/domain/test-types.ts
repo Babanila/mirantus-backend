@@ -12,12 +12,6 @@ const validOrder: OrderResource = {
   updatedAt: '2026-06-27T10:00:00.000Z',
 };
 
-// This should cause a type error (uncomment to test):
-// const invalidOrder: OrderResource = {
-//   ...validOrder,
-//   idempotencyKey: 'should-not-exist', // ← Type error
-// };
-
 // Enum value checks
 const routine: OrderPriority = OrderPriority.ROUTINE;
 const urgent: OrderPriority = OrderPriority.URGENT;

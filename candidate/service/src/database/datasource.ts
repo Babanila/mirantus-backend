@@ -10,7 +10,7 @@ import * as dotenv from 'dotenv';
  * - npm run migration:revert
  *
  * It reads directly from process.env after loading .env via dotenv,
- * bypassing the NestJS ConfigModule and Joi validation intentionally —
+ * bypassing the NestJS AppConfigModule and Joi validation intentionally —
  * the CLI context has no NestJS container.
  *
  * Usage:
