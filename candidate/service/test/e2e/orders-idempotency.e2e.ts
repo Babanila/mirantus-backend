@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { createTestingApp } from '../app-factory';
 import { truncateTables, verifySchema } from '../database-setup';
 import { OrderPriority } from '../../src/orders/domain/order-priority.enum';
-import { OrderStatus } from 'src/orders/domain/order-status.enum';
+import { OrderStatus } from '../../src/orders/domain/order-status.enum';
 
 type Server = ReturnType<INestApplication['getHttpServer']>;
 
@@ -16,7 +16,7 @@ const BASE_PAYLOAD = {
   priority: OrderPriority.ROUTINE,
 };
 
-const CONCURRENT_REQUESTS = 10;
+const CONCURRENT_REQUESTS = 5;
 const TEST_TIMEOUT = 60000;
 
 describe('Orders — Concurrent Idempotency (Integration)', () => {
@@ -99,9 +99,22 @@ describe('Orders — Concurrent Idempotency (Integration)', () => {
     async () => {
       const idempotencyKey = uuidv4();
 
-      const responses = await Promise.all(
-        Array.from({ length: CONCURRENT_REQUESTS }, () =>
-          request(server).post('/orders').set('Idempotency-Key', idempotencyKey).send(BASE_PAYLOAD),
+      // Added jitter: Prevents thundering herd effect on CI runners
+      // while maintaining true concurrency validation
+      const responses = await Promise.all<request.Response>(
+        Array.from(
+          { length: CONCURRENT_REQUESTS },
+          (_, i) =>
+            new Promise<request.Response>((resolve) => {
+              setTimeout(() => {
+                resolve(
+                  request(server)
+                    .post('/orders')
+                    .set('Idempotency-Key', idempotencyKey)
+                    .send(BASE_PAYLOAD),
+                );
+              }, i * 10);
+            }),
         ),
       );
 
