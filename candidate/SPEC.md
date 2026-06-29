@@ -201,11 +201,16 @@ candidate/service/
 │   ├── migrations/
 │          └── 1719482400000-CreateOrdersTable.ts
 ├── test/
-│   └── setup.ts
+│   ├── e2e/
+│   ├── app-factory.ts
+│   ├── database-setup.ts
+│   └── global-setup.ts
 ├── .env.example
 ├── .eslintrc.js
+├── .dockerignore
 ├── Dockerfile
 ├── docker-compose.yml
+├── docker-compose.test.yml
 ├── nest-cli.json
 ├── package.json
 ├── tsconfig.json

@@ -42,11 +42,16 @@ candidate/service/
 │   ├── migrations/
 │          └── 1719482400000-CreateOrdersTable.ts
 ├── test/
-│   └── setup.ts
+│   ├── e2e/
+│   ├── app-factory.ts
+│   ├── database-setup.ts
+│   └── global-setup.ts
 ├── .env.example
 ├── .eslintrc.js
+├── .dockerignore
 ├── Dockerfile
 ├── docker-compose.yml
+├── docker-compose.test.yml
 ├── nest-cli.json
 ├── package.json
 ├── tsconfig.json
@@ -1441,10 +1446,10 @@ src/orders/orders.service.spec.ts
 **Mock pattern:**
 ```typescript
 const mockRepo = {
-  create:      jest.fn(),
-  save:        jest.fn(),
-  findOneBy:   jest.fn(),
-  findOneByOrFail: jest.fn(),
+  create:      vi.fn(),
+  save:        vi.fn(),
+  findOneBy:   vi.fn(),
+  findOneByOrFail: vi.fn(),
   // ...
 };
 ```
@@ -1495,13 +1500,13 @@ real Postgres database, asserting HTTP status codes, response shapes, and databa
 **Outputs:**
 ```
 test/
-├── setup.ts                   (Postgres connection, migration runner, table cleaner)
+├── global-setup.ts                   (Postgres connection, migration runner, table cleaner)
 └── orders-lifecycle.e2e.ts
 ```
 
 **Test database setup:**
 ```typescript
-// test/setup.ts
+// test/database-setup.ts
 import { DataSource } from 'typeorm';
 
 export async function setupTestDb(): Promise<DataSource> {
@@ -1516,8 +1521,36 @@ export async function setupTestDb(): Promise<DataSource> {
   return ds;
 }
 
-export async function clearOrders(ds: DataSource) {
-  await ds.query('TRUNCATE TABLE orders RESTART IDENTITY CASCADE');
+export async function verifySchema(ds: DataSource): Promise<void> {
+  const constraints = await ds.query(`
+    SELECT
+        tc.constraint_type,
+        kcu.column_name
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+      ON tc.constraint_name = kcu.constraint_name
+    WHERE tc.table_name='orders'
+  `);
+
+  const hasPrimaryKey = constraints.some(
+    (c: Record<string, unknown>) => c.constraint_type === 'PRIMARY KEY',
+  );
+  const hasIdempotencyConstraint = constraints.some(
+    (c: Record<string, unknown>) =>
+      c.constraint_type === 'UNIQUE' && c.column_name === 'idempotency_key',
+  );
+  if (!hasPrimaryKey) {
+    throw new Error('Orders table is missing PRIMARY KEY.');
+  }
+  if (!hasIdempotencyConstraint) {
+    throw new Error('Orders table is missing UNIQUE constraint on idempotency_key.');
+  }
+}
+
+export async function truncateTables(ds: DataSource, tables: string[]): Promise<void> {
+  if (!tables.length) return;
+  const sql = tables.map((table) => `"${table}"`).join(', ');
+  await ds.query(`TRUNCATE TABLE ${sql} RESTART IDENTITY CASCADE`);
 }
 ```
 
