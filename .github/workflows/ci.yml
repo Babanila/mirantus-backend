@@ -11,7 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read  
+  contents: read
+  pull-requests: write
 
 jobs:
   ci:
@@ -38,16 +39,20 @@ jobs:
           - 5432:5432
 
     env:
-      DATABASE_URL: postgresql://user:password@localhost:5432/screening_orders_test?sslmode=disable
+      DATABASE_URL: postgresql://user:password@postgres:5432/screening_orders_test?sslmode=disable
       NODE_ENV: test
       LOG_LEVEL: error
       CORS_ORIGIN: http://localhost:3000
+      API_PORT:               3001
+      DB_POOL_MAX:            10
+      DB_POOL_MIN:            5
+      DB_CONNECT_TIMEOUT_MS:  5000
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Required for migration history tracking
+          fetch-depth: 1
 
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
@@ -79,7 +84,11 @@ jobs:
 
       - name: Run integration tests
         run: npm run test:integration
-
+        timeout-minutes: 10
+        env:
+          # UV_THREADPOOL_SIZE controls libuv threads — more threads handle
+          # concurrent HTTP connections more reliably on CI runners
+          UV_THREADPOOL_SIZE: 16
       - name: Upload coverage report
         uses: codecov/codecov-action@v4
         with:

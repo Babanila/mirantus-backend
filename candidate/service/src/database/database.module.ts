@@ -26,7 +26,7 @@ import { OrderEntity } from '../orders/entities/order.entity';
           entities: [OrderEntity],
           synchronize: false,
           migrationsRun: false, // Migrations run explicitly via CLI (T-08 scripts)
-          logging: ['development', 'test'].includes(appConfig.nodeEnv),
+          logging: appConfig.nodeEnv === 'development',
           extra: {
             max: appConfig.dbPoolMax,
             min: appConfig.dbPoolMin,
