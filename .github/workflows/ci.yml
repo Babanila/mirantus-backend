@@ -39,7 +39,7 @@ jobs:
           - 5432:5432
 
     env:
-      DATABASE_URL: postgresql://user:password@postgres:5432/screening_orders_test?sslmode=disable
+      DATABASE_URL: postgresql://user:password@localhost:5432/screening_orders_test?sslmode=disable
       NODE_ENV: test
       LOG_LEVEL: error
       CORS_ORIGIN: http://localhost:3000
